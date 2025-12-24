@@ -1,3 +1,5 @@
+# Mask with all bits set
+MASK64 = 0xFFFFFFFFFFFFFFFF
 
 # File masks with all bits set on given file
 FILE_A = 0x0101010101010101
@@ -5,14 +7,24 @@ FILE_B = FILE_A << 1
 FILE_G = FILE_A << 6
 FILE_H = FILE_A << 7
 
-NOT_FILE_A = ~FILE_A & 0xFFFFFFFFFFFFFFFF
-NOT_FILE_H = ~FILE_H & 0xFFFFFFFFFFFFFFFF
-NOT_FILE_AB = ~(FILE_A | FILE_B) & 0xFFFFFFFFFFFFFFFF
-NOT_FILE_GH = ~(FILE_G | FILE_H) & 0xFFFFFFFFFFFFFFFF
+NOT_FILE_A = ~FILE_A & MASK64
+NOT_FILE_H = ~FILE_H & MASK64
+NOT_FILE_AB = ~(FILE_A | FILE_B) & MASK64
+NOT_FILE_GH = ~(FILE_G | FILE_H) & MASK64
+
+# Ranks masks
+RANK_1 = 0x00000000000000FF
+RANK_2 = RANK_1 << 8
+RANK_3 = RANK_1 << 16
+RANK_4 = RANK_1 << 24
+RANK_5 = RANK_1 << 32
+RANK_6 = RANK_1 << 40
+RANK_7 = RANK_1 << 48
+RANK_8 = RANK_1 << 56
 
 # Ensures we only have 64 bits
 def _mask64(x: int) -> int:
-    return x & 0xFFFFFFFFFFFFFFFF
+    return x & MASK64
 
 def knight_attacks_from(sq: int) -> int:
     bb = 1 << sq
@@ -41,5 +53,27 @@ def knight_attacks_from(sq: int) -> int:
     # If a knight attach goes too high, make sure we trim it back to 64 bits with mask64
     return _mask64(attacks)
 
-# Precompute knight attacks for every square
+def king_attacks_from(sq: int) -> int:
+    bb = 1 << sq
+
+    attacks = 0
+
+    # 1 up, 1 down
+    attacks |= bb << 8
+    attacks |= bb >> 8
+
+    # 1 left, 1 right
+    attacks |= (bb & NOT_FILE_A) >> 1
+    attacks |= (bb & NOT_FILE_H) << 1
+
+    # diagonals
+    attacks |= (bb & NOT_FILE_H) << 9 
+    attacks |= (bb & NOT_FILE_A) << 7 
+    attacks |= (bb & NOT_FILE_H) >> 7 
+    attacks |= (bb & NOT_FILE_A) >> 9 
+
+    return _mask64(attacks)
+
+# Precompute attacks for every square
 KNIGHT_ATTACKS = [knight_attacks_from(sq) for sq in range(64)]
+KING_ATTACKS = [king_attacks_from(sq) for sq in range(64)]
