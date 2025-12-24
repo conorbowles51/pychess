@@ -48,3 +48,21 @@ class Position:
         self.white_occ = w
         self.black_occ = b
         self.all_occ = w | b
+
+# Pretty print for debugging
+def pretty(pos: Position) -> str:
+    board = ["." for _ in range(64)]
+    # Fill squares by scanning bitboards
+    for piece_char, idx in PIECE_TO_INDEX.items():
+        bb = pos.pieces[idx]
+        while bb:
+            lsb = bb & -bb
+            sq = lsb.bit_length() - 1
+            board[sq] = piece_char
+            bb ^= lsb
+    lines = []
+    for rank in range(7, -1, -1):
+        row = board[rank * 8 : rank * 8 + 8]
+        lines.append(f"{rank+1}  " + " ".join(row))
+    lines.append("   a b c d e f g h")
+    return "\n".join(lines)
