@@ -66,7 +66,7 @@ def uci_loop():
         cmd = tokens[0]
         
         if cmd == "uci":
-            print("id name PyChess")
+            print("id name CB-PyChess")
             print("id author ConorBowles")
             print("uciok")
         
