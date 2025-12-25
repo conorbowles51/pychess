@@ -386,3 +386,23 @@ def is_checkmate(pos: Position) -> bool:
 def is_stalemate(pos: Position) -> bool:
     """Is the current side in stalemate?"""
     return not is_in_check(pos) and len(generate_legal_moves(pos)) == 0
+
+
+def generate_captures(pos: Position) -> list[Move]:
+    """Generate only capture moves."""
+    all_moves = generate_all_moves(pos)
+    enemy_occ = pos.black_occ if pos.side_to_move == "w" else pos.white_occ
+    
+    captures = []
+    for move in all_moves:
+        # Check if to_sq has an enemy piece
+        if (1 << move.to_sq) & enemy_occ:
+            captures.append(move)
+        # Also include en passant (it's a capture but to_sq is empty)
+        elif pos.ep_square is not None and move.to_sq == pos.ep_square:
+            # Check if a pawn is making this move
+            pawn_idx = 0 if pos.side_to_move == "w" else 6
+            if (1 << move.from_sq) & pos.pieces[pawn_idx]:
+                captures.append(move)
+    
+    return captures

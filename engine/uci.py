@@ -5,6 +5,7 @@ from .search import search
 from .makeunmake import make_move
 from .move import Move
 from .bitboard import uci_to_sq
+from .zobrist import hash_position
 
 def parse_move(uci_str: str) -> Move:
     """Convert UCI string like 'e2e4' or 'e7e8q' to a Move object."""
@@ -17,6 +18,7 @@ def parse_move(uci_str: str) -> Move:
 def parse_position(tokens: list[str]) -> Position:
     """Parse 'position startpos moves e2e4 e7e5' or 'position fen <fen> moves ...'"""
     idx = 1
+    history = set()
     
     if tokens[idx] == "startpos":
         pos = parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -27,6 +29,9 @@ def parse_position(tokens: list[str]) -> Position:
         fen = " ".join(fen_parts)
         pos = parse_fen(fen)
         idx = 8
+
+    # Add starting position to history
+    history.add(hash_position(pos))
     
     # Apply moves if present
     if idx < len(tokens) and tokens[idx] == "moves":
@@ -34,13 +39,14 @@ def parse_position(tokens: list[str]) -> Position:
         while idx < len(tokens):
             move = parse_move(tokens[idx])
             pos = make_move(pos, move)
+            history.add(hash_position(pos))  # Track each position
             idx += 1
     
-    return pos
+    return pos, history
 
 def parse_go(tokens: list[str]) -> int:
     """Parse 'go depth 5' and return the depth. Default to 4 if not specified."""
-    depth = 4  # Default depth
+    depth = 2  # Default depth
     
     for i, token in enumerate(tokens):
         if token == "depth" and i + 1 < len(tokens):
@@ -52,6 +58,7 @@ def parse_go(tokens: list[str]) -> int:
 def uci_loop():
     """Main UCI protocol loop."""
     pos = None
+    history = set()
     
     while True:
         try:
@@ -75,14 +82,15 @@ def uci_loop():
         
         elif cmd == "ucinewgame":
             pos = None
+            history = set()  # Clear history for new game
         
         elif cmd == "position":
-            pos = parse_position(tokens)
+            pos, history = parse_position(tokens)
         
         elif cmd == "go":
             depth = parse_go(tokens)
             if pos:
-                best_move, score = search(pos, depth)
+                best_move, score = search(pos, depth, history)
                 if best_move:
                     print(f"bestmove {best_move.to_uci()}")
                 else:
