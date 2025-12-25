@@ -3,9 +3,17 @@ from .position import Position, PIECE_TO_INDEX
 from .attacks import KNIGHT_ATTACKS, KING_ATTACKS, FILE_A, FILE_H, RANK_2, RANK_7, RANK_1, RANK_8
 from .bitboard import pop_lsb
 from .move import Move
+from .detect_attack import is_square_attacked
+from .move_validator import is_legal
 
 MASK64 = 0xFFFFFFFFFFFFFFFF
 PROMOS = ("q", "r", "b", "n")
+
+# Square indices for castling
+E1, F1, G1, H1 = 4, 5, 6, 7
+A1, B1, C1, D1 = 0, 1, 2, 3
+E8, F8, G8, H8 = 60, 61, 62, 63
+A8, B8, C8, D8 = 56, 57, 58, 59
 
 def generate_knight_moves(pos: Position) -> list[Move]:
     moves: list[Move] = []
@@ -55,6 +63,43 @@ def generate_king_moves(pos: Position) -> list[Move]:
         to_sq, t = pop_lsb(t)
         moves.append(Move(from_sq, to_sq))
 
+    # Castling
+    if pos.side_to_move == "w":
+        # Kingside
+        if "K" in pos.castling:
+            if not (pos.all_occ & ((1 << F1) | (1 << G1))):
+                # Check king is not in check and doesn't pass through check
+                if (not is_square_attacked(pos, E1, "b") and
+                    not is_square_attacked(pos, F1, "b") and
+                    not is_square_attacked(pos, G1, "b")):
+                    moves.append(Move(E1, G1))
+        
+        if "Q" in pos.castling:
+            if not (pos.all_occ & ((1 << B1) | (1 << C1) | (1 << D1))):
+                 if (not is_square_attacked(pos, E1, "b") and
+                    not is_square_attacked(pos, D1, "b") and
+                    not is_square_attacked(pos, C1, "b")):
+                    moves.append(Move(E1, C1))
+    else:
+        # Kingside (O-O)
+        if "k" in pos.castling:
+            # Check squares between king and rook are empty
+            if not (pos.all_occ & ((1 << F8) | (1 << G8))):
+                # Check king is not in check and doesn't pass through check
+                if (not is_square_attacked(pos, E8, "w") and
+                    not is_square_attacked(pos, F8, "w") and
+                    not is_square_attacked(pos, G8, "w")):
+                    moves.append(Move(E8, G8))
+
+        # Queenside (O-O-O)
+        if "q" in pos.castling:
+            # Check squares between king and rook are empty (b8, c8, d8)
+            if not (pos.all_occ & ((1 << B8) | (1 << C8) | (1 << D8))):
+                # Check king is not in check and doesn't pass through check
+                if (not is_square_attacked(pos, E8, "w") and
+                    not is_square_attacked(pos, D8, "w") and
+                    not is_square_attacked(pos, C8, "w")):
+                    moves.append(Move(E8, C8))
     return moves
 
 def generate_pawn_moves(pos: Position) -> list[Move]:
@@ -313,3 +358,31 @@ def generate_all_moves(pos: Position) -> list[Move]:
     moves.extend(generate_queen_moves(pos))
     moves.extend(generate_king_moves(pos))
     return moves
+
+def generate_legal_moves(pos: Position) -> list[Move]:
+    """Generate all legal moves for the current position."""
+    pseudo_legal = generate_all_moves(pos)
+    return [move for move in pseudo_legal if is_legal(pos, move)]
+
+
+
+def is_in_check(pos: Position) -> bool:
+    # Find our king
+    if pos.side_to_move == "w":
+        king_bb = pos.pieces[PIECE_TO_INDEX["K"]]
+        enemy = "b"
+    else:
+        king_bb = pos.pieces[PIECE_TO_INDEX["k"]]
+        enemy = "w"
+    
+    king_sq, _ = pop_lsb(king_bb)
+    return is_square_attacked(pos, king_sq, enemy)
+
+def is_checkmate(pos: Position) -> bool:
+    """Is the current side in checkmate?"""
+    return is_in_check(pos) and len(generate_legal_moves(pos)) == 0
+
+
+def is_stalemate(pos: Position) -> bool:
+    """Is the current side in stalemate?"""
+    return not is_in_check(pos) and len(generate_legal_moves(pos)) == 0

@@ -1,3 +1,4 @@
+from engine.bitboard import pop_lsb
 from .position import Position, PIECE_TO_INDEX
 from .attacks import KNIGHT_ATTACKS, KING_ATTACKS
 from .sliders import rook_attacks, bishop_attacks

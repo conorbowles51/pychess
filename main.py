@@ -1,6 +1,4 @@
-from engine.fen import parse_fen
-from engine.position import pretty
+from engine.uci import uci_loop
 
-START = "kkbqkbnr/pppppppp/8/6pP/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-pos = parse_fen(START)
-print(pretty(pos))
+if __name__ == "__main__":
+    uci_loop()
