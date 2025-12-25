@@ -36,8 +36,8 @@ def parse_fen(fen: str) -> Position:
                 pos.pieces[idx] = set_bit(pos.pieces[idx], sq)
                 file += 1
         
-    if file != 8:
-        raise ValueError("Rank does not sum to 8 squares")
+        if file != 8:
+            raise ValueError("Rank does not sum to 8 squares")
     
     if stm not in ("w", "b"):
         raise ValueError("Side to move must be w or b")

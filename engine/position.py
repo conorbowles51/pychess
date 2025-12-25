@@ -49,6 +49,19 @@ class Position:
         self.black_occ = b
         self.all_occ = w | b
 
+    def copy(self) -> "Position":
+        return Position(
+            self.pieces.copy(),
+            self.white_occ,
+            self.black_occ,
+            self.all_occ,
+            self.side_to_move,
+            self.castling,
+            self.ep_square,
+            self.halfmove_clock,
+            self.fullmove_number
+        )
+
 # Pretty print for debugging
 def pretty(pos: Position) -> str:
     board = ["." for _ in range(64)]

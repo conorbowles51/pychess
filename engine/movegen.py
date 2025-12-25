@@ -1,3 +1,4 @@
+from engine.sliders import bishop_attacks, queen_attacks, rook_attacks
 from .position import Position, PIECE_TO_INDEX
 from .attacks import KNIGHT_ATTACKS, KING_ATTACKS, FILE_A, FILE_H, RANK_2, RANK_7, RANK_1, RANK_8
 from .bitboard import pop_lsb
@@ -229,4 +230,86 @@ def generate_pawn_moves(pos: Position) -> list[Move]:
                 moves.append(Move(from_sq, pos.ep_square))
 
 
+    return moves
+
+
+def generate_rook_moves(pos: Position) -> list[Move]:
+    moves: list[Move] = []
+
+    if pos.side_to_move == "w":
+        rooks = pos.pieces[PIECE_TO_INDEX["R"]]
+        own_occ = pos.white_occ
+    else:
+        rooks = pos.pieces[PIECE_TO_INDEX["r"]]
+        own_occ = pos.black_occ
+
+    bb = rooks
+    while bb:
+        from_sq, bb = pop_lsb(bb)
+        attacks = rook_attacks(from_sq, pos.all_occ)
+        targets = attacks & ~own_occ
+
+        t = targets
+        while t:
+            to_sq, t = pop_lsb(t)
+            moves.append(Move(from_sq, to_sq))
+
+    return moves
+
+def generate_bishop_moves(pos: Position) -> list[Move]:
+    moves: list[Move] = []
+
+    if pos.side_to_move == "w":
+        bishops = pos.pieces[PIECE_TO_INDEX["B"]]
+        own_occ = pos.white_occ
+    else:
+        bishops = pos.pieces[PIECE_TO_INDEX["b"]]
+        own_occ = pos.black_occ
+
+    bb = bishops
+    while bb:
+        from_sq, bb = pop_lsb(bb)
+        attacks = bishop_attacks(from_sq, pos.all_occ)
+        targets = attacks & ~own_occ
+
+        t = targets
+        while t:
+            to_sq, t = pop_lsb(t)
+            moves.append(Move(from_sq, to_sq))
+
+    return moves
+
+def generate_queen_moves(pos: Position) -> list[Move]:
+    moves: list[Move] = []
+
+    if pos.side_to_move == "w":
+        queens = pos.pieces[PIECE_TO_INDEX["Q"]]
+        own_occ = pos.white_occ
+    else:
+        queens = pos.pieces[PIECE_TO_INDEX["q"]]
+        own_occ = pos.black_occ
+
+    bb = queens
+    while bb:
+        from_sq, bb = pop_lsb(bb)
+        attacks = queen_attacks(from_sq, pos.all_occ)
+        targets = attacks & ~own_occ
+
+        t = targets
+        while t:
+            to_sq, t = pop_lsb(t)
+            moves.append(Move(from_sq, to_sq))
+
+    return moves
+
+
+def generate_all_moves(pos: Position) -> list[Move]:
+    """Generate all pseudo-legal moves for the current position."""
+    moves: list[Move] = []
+    moves.extend(generate_pawn_moves(pos))
+    moves.extend(generate_knight_moves(pos))
+    moves.extend(generate_bishop_moves(pos))
+    moves.extend(generate_rook_moves(pos))
+    moves.extend(generate_queen_moves(pos))
+    moves.extend(generate_king_moves(pos))
     return moves
