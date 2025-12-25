@@ -46,7 +46,7 @@ def parse_position(tokens: list[str]) -> Position:
 
 def parse_go(tokens: list[str]) -> int:
     """Parse 'go depth 5' and return the depth. Default to 4 if not specified."""
-    depth = 2  # Default depth
+    depth = 5  # Default depth
     
     for i, token in enumerate(tokens):
         if token == "depth" and i + 1 < len(tokens):
